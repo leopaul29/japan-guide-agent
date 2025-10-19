@@ -5,16 +5,11 @@ from langchain.tools import tool
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 import os
-from urllib.parse import urlencode, parse_qs
-import secrets
-import hashlib
-import base64
 
-# Auth0 Configuration
+# Auth0 Configuration (for future use)
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 AUTH0_CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
-AUTH0_CALLBACK_URL = os.getenv("AUTH0_CALLBACK_URL", "http://localhost:8501")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Initialize session state
@@ -22,78 +17,6 @@ if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
 if 'user_info' not in st.session_state:
     st.session_state.user_info = None
-if 'code_verifier' not in st.session_state:
-    st.session_state.code_verifier = None
-if 'state' not in st.session_state:
-    st.session_state.state = None
-
-# PKCE Helper Functions
-def generate_code_verifier():
-    """Generate a cryptographically random code verifier"""
-    return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('utf-8').rstrip('=')
-
-def generate_code_challenge(verifier):
-    """Generate code challenge from verifier using SHA256"""
-    digest = hashlib.sha256(verifier.encode('utf-8')).digest()
-    return base64.urlsafe_b64encode(digest).decode('utf-8').rstrip('=')
-
-# Auth0 Functions
-def get_auth0_login_url():
-    """Generate Auth0 authorization URL with PKCE"""
-    code_verifier = generate_code_verifier()
-    code_challenge = generate_code_challenge(code_verifier)
-    state = secrets.token_urlsafe(32)
-    
-    # Store in session state
-    st.session_state.code_verifier = code_verifier
-    st.session_state.state = state
-    
-    params = {
-        'response_type': 'code',
-        'client_id': AUTH0_CLIENT_ID,
-        'redirect_uri': AUTH0_CALLBACK_URL,
-        'scope': 'openid profile email',
-        'state': state,
-        'code_challenge': code_challenge,
-        'code_challenge_method': 'S256'
-    }
-    
-    auth_url = f"https://{AUTH0_DOMAIN}/authorize?{urlencode(params)}"
-    return auth_url
-
-def exchange_code_for_token(code):
-    """Exchange authorization code for access token"""
-    token_url = f"https://{AUTH0_DOMAIN}/oauth/token"
-    
-    data = {
-        'grant_type': 'authorization_code',
-        'client_id': AUTH0_CLIENT_ID,
-        'client_secret': AUTH0_CLIENT_SECRET,
-        'code': code,
-        'redirect_uri': AUTH0_CALLBACK_URL,
-        'code_verifier': st.session_state.code_verifier
-    }
-    
-    try:
-        response = requests.post(token_url, json=data, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Token exchange failed: {str(e)}")
-        return None
-
-def get_user_info(access_token):
-    """Fetch user information from Auth0"""
-    userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
-    headers = {'Authorization': f'Bearer {access_token}'}
-    
-    try:
-        response = requests.get(userinfo_url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Failed to fetch user info: {str(e)}")
-        return None
 
 # Tool to fetch weather from Open-Meteo
 @tool
@@ -201,78 +124,48 @@ User request: {input}
     
     return agent_executor
 
-# Auth0 Login Page
+# Simple Login Page (Demo for Hackathon)
 def show_login():
     st.title("🌤️ Weather Outfit AI Agent")
-    st.write("### Welcome! Please log in with Auth0 to continue")
+    st.write("### Welcome! Please log in to continue")
     
-    # Check for OAuth callback
-    query_params = st.query_params
-    
-    # Handle OAuth callback
-    if 'code' in query_params and 'state' in query_params:
-        code = query_params['code']
-        state = query_params['state']
-        
-        # Skip state verification for now (Streamlit session issue)
-        # In production, implement proper state storage (database/cache)
-        # if state != st.session_state.state:
-        #     st.error("Invalid state parameter. Possible CSRF attack.")
-        #     return
-        
-        with st.spinner("Authenticating with Auth0..."):
-            # Exchange code for token
-            token_data = exchange_code_for_token(code)
-            
-            if token_data and 'access_token' in token_data:
-                # Get user info
-                user_info = get_user_info(token_data['access_token'])
-                
-                if user_info:
-                    st.session_state.authenticated = True
-                    st.session_state.user_info = user_info
-                    
-                    # Clear query params
-                    st.query_params.clear()
-                    st.rerun()
-                else:
-                    st.error("Failed to retrieve user information")
-            else:
-                st.error("Authentication failed. Please try again.")
-        return
-    
-    # Show login button
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.info("🔐 This app uses Auth0 for secure authentication")
+        st.info("🔐 Simple demo authentication for hackathon")
         st.write("**Features:**")
-        st.write("✅ OAuth 2.0 with PKCE flow")
         st.write("🌍 Real-time weather data for any city")
         st.write("👔 AI-powered outfit suggestions")
         st.write("😂 Humorous fashion advice")
         
         st.divider()
         
-        if not AUTH0_DOMAIN or not AUTH0_CLIENT_ID:
-            st.warning("⚠️ Auth0 credentials not configured. Please set AUTH0_DOMAIN and AUTH0_CLIENT_ID in your environment.")
-            st.code("""
-# Add to .streamlit/secrets.toml:
-AUTH0_DOMAIN = "your-domain.auth0.com"
-AUTH0_CLIENT_ID = "your_client_id"
-AUTH0_CLIENT_SECRET = "your_client_secret"
-AUTH0_CALLBACK_URL = "http://localhost:8501"
-            """)
-        else:
-            auth_url = get_auth0_login_url()
-            st.markdown(f"[🔑 **Log in with Auth0**]({auth_url})", unsafe_allow_html=True)
-            st.caption("You'll be redirected to Auth0's secure login page")
+        # Simple login form
+        with st.form("login_form"):
+            st.write("**Enter any credentials to continue**")
+            email = st.text_input("Email", value="demo@example.com")
+            password = st.text_input("Password", type="password", value="demo123")
+            
+            if st.form_submit_button("🔑 Log In", type="primary", use_container_width=True):
+                if email and password:
+                    st.session_state.authenticated = True
+                    st.session_state.user_info = {
+                        "email": email, 
+                        "name": email.split('@')[0].capitalize()
+                    }
+                    st.rerun()
+                else:
+                    st.error("Please enter both email and password")
+        
+        st.caption("💡 This is a demo login. In production, this would use Auth0 OAuth 2.0")
     
     with col2:
         st.write("### Quick Start")
-        st.write("1. Click 'Log in with Auth0'")
-        st.write("2. Enter credentials")
+        st.write("1. Enter any email/password")
+        st.write("2. Click Log In")
         st.write("3. Get outfit suggestions!")
+        st.write("")
+        st.info("🎯 Try cities like:\n- Paris\n- Tokyo\n- New York\n- London")
 
 # Main App
 def show_app():
@@ -287,8 +180,6 @@ def show_app():
         if st.button("Logout", type="secondary"):
             st.session_state.authenticated = False
             st.session_state.user_info = None
-            st.session_state.code_verifier = None
-            st.session_state.state = None
             st.rerun()
     
     st.divider()
