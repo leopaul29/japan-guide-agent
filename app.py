@@ -86,14 +86,20 @@ def create_outfit_agent():
     
     tools = [get_weather]
     
-    prompt_template = """You are a hilarious fashion advisor with a quirky sense of humor. 
-Your job is to suggest outfits based on current weather conditions.
+    prompt_template = """You are a hilarious Japanese fashion advisor with expertise in traditional and modern Japanese clothing styles.
+Your job is to suggest Japanese-inspired outfits based on current weather conditions.
 
 IMPORTANT: You MUST use the get_weather tool to fetch real weather data before suggesting an outfit.
 Do NOT make up weather information or suggest outfits without checking the weather first.
 
+Suggest outfits that include Japanese clothing elements such as:
+- Traditional: Kimono, Yukata, Hakama, Haori, Geta, Zori, Tabi socks
+- Modern Japanese streetwear: Techwear, minimalist fashion, Uniqlo style
+- Seasonal Japanese fashion: Light fabrics for summer (natsu), layers for winter (fuyu)
+
 Be funny, creative, and add witty commentary about the weather and outfit choices.
-Use pop culture references, puns, or absurd comparisons when appropriate.
+Use Japanese fashion references, anime comparisons, or cultural elements when appropriate.
+You can mix traditional and modern pieces for a unique "Japanese fusion" style.
 
 Tools available: {tool_names}
 
@@ -105,8 +111,8 @@ Thought: I need to get the weather data for the city
 Action: get_weather
 Action Input: the city name
 Observation: the weather result
-Thought: Now I can suggest an outfit based on this weather
-Final Answer: Your hilarious outfit suggestion mentioning the city and weather
+Thought: Now I can suggest a Japanese-inspired outfit based on this weather
+Final Answer: Your hilarious Japanese fashion suggestion mentioning the city, weather, and specific Japanese clothing items
 
 User request: {input}
 
@@ -126,7 +132,7 @@ User request: {input}
 
 # Simple Login Page (Demo for Hackathon)
 def show_login():
-    st.title("🌤️ Weather Outfit AI Agent")
+    st.title("🎌 Japanese Fashion AI Agent")
     st.write("### Welcome! Please log in to continue")
     
     col1, col2 = st.columns([2, 1])
@@ -134,9 +140,10 @@ def show_login():
     with col1:
         st.info("🔐 Simple demo authentication for hackathon")
         st.write("**Features:**")
-        st.write("🌍 Real-time weather data for any city")
-        st.write("👔 AI-powered outfit suggestions")
-        st.write("😂 Humorous fashion advice")
+        st.write("🎌 Japanese-inspired fashion suggestions")
+        st.write("🌍 Real-time weather data worldwide")
+        st.write("👘 Traditional & modern Japanese clothing")
+        st.write("😂 Humorous AI recommendations")
         
         st.divider()
         
@@ -163,19 +170,19 @@ def show_login():
         st.write("### Quick Start")
         st.write("1. Enter any email/password")
         st.write("2. Click Log In")
-        st.write("3. Get outfit suggestions!")
+        st.write("3. Get Japanese outfit ideas!")
         st.write("")
-        st.info("🎯 Try cities like:\n- Paris\n- Tokyo\n- New York\n- London")
+        st.info("🎯 Try cities like:\n- Tokyo 🗼\n- Kyoto 🏯\n- Paris 🗼\n- New York 🗽")
 
 # Main App
 def show_app():
-    st.title("🌤️ Weather Outfit AI Agent")
+    st.title("🎌 Japanese Fashion AI Agent")
     
     # User info and logout
     col1, col2 = st.columns([3, 1])
     with col1:
         user_name = st.session_state.user_info.get('name', st.session_state.user_info.get('email', 'User'))
-        st.write(f"**Welcome, {user_name}!** 👋")
+        st.write(f"**ようこそ (Welcome), {user_name}!** 👋")
     with col2:
         if st.button("Logout", type="secondary"):
             st.session_state.authenticated = False
@@ -184,8 +191,8 @@ def show_app():
     
     st.divider()
     
-    st.write("### 🎯 Get Your Perfect Outfit Suggestion")
-    st.write("Enter any city name and let our AI fashion advisor suggest what to wear today!")
+    st.write("### 🎯 Get Your Japanese-Inspired Outfit")
+    st.write("Enter any city and discover what traditional or modern Japanese clothing would be perfect for today's weather!")
     
     # City input with validation
     city_input = st.text_input(
@@ -195,7 +202,7 @@ def show_app():
     )
     
     # Popular cities suggestions
-    st.caption("💡 Popular cities: Paris, Tokyo, New York, London, Dubai, Sydney")
+    st.caption("💡 Try Japanese cities: Tokyo, Kyoto, Osaka, Sapporo, Fukuoka | Or any city worldwide!")
     
     col1, col2 = st.columns([1, 3])
     with col1:
@@ -214,11 +221,11 @@ def show_app():
             with st.spinner(f"🔍 Checking weather in {city_input.strip()} and crafting your perfect outfit..."):
                 try:
                     agent_executor = create_outfit_agent()
-                    prompt = f"What outfit should I wear today in {city_input.strip()}? Check the weather and make it funny!"
+                    prompt = f"What Japanese-inspired outfit should I wear today in {city_input.strip()}? Check the weather and suggest traditional or modern Japanese clothing with humor!"
                     
                     result = agent_executor.invoke({"input": prompt})
                     
-                    st.success("### 👔 Your Outfit Suggestion:")
+                    st.success("### 👘 Your Japanese Fashion Suggestion:")
                     st.write(result['output'])
                     
                 except Exception as e:
@@ -227,14 +234,14 @@ def show_app():
     
     # Footer
     st.divider()
-    st.caption("🔒 Secured by Auth0 OAuth 2.0 | Powered by OpenAI GPT-4 & Open-Meteo")
-    st.caption("Built for Auth0 AI Agent Hackathon 2025")
+    st.caption("🎌 Japanese Fashion AI powered by OpenAI GPT-4 & Open-Meteo")
+    st.caption("🔒 Secured by Auth0 | Built for Auth0 AI Agent Hackathon 2025")
 
 # Main entry point
 def main():
     st.set_page_config(
-        page_title="Weather Outfit AI",
-        page_icon="🌤️",
+        page_title="Japanese Fashion AI",
+        page_icon="🎌",
         layout="centered"
     )
     
